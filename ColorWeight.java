@@ -55,6 +55,11 @@ public class ColorWeight extends Color implements Comparable<Color> {
         return this.getRGB() == other.getRGB();
     }
 
+
+    public float getHue() {
+        return Color.RGBtoHSB(this.getRed(), this.getGreen(), this.getBlue(), null)[0];
+    }
+
     public static ColorWeight averageWeights(List<ColorWeight> colors) {
         long red = 0;
         long green = 0;

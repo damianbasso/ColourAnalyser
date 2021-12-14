@@ -17,6 +17,14 @@ public class Centroid {
     }
     
     /**
+     * Calculates the total distance between every colour in the data set and the mean.
+     * @return - the sum distance between all the nodes and the mean
+     */
+    public double sumDistanceFromMean() {
+        return cluster.stream().mapToDouble(c -> Math.abs(hue - c.getHue())).sum();
+    }
+
+    /**
      * 
      * @return - true if the centroid changes, false otherwise
      */
@@ -28,7 +36,7 @@ public class Centroid {
         cluster = newCluster;
         hue = Color.RGBtoHSB(newColor.getRed(), newColor.getGreen(), newColor.getBlue(), null)[0];
         color = newColor;
-        // weight = newCluster.stream().mapToInt(c -> c.getWeight()).sum();
+        weight = newCluster.stream().mapToInt(c -> c.getWeight()).sum();
         return true;
     }
     
