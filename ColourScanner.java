@@ -183,13 +183,14 @@ public class ColourScanner {
 
     public static void main(String args[]) throws IOException {
 
-        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\space.jpeg");
+        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\lego.png");
         if (file.exists()) {
             System.out.println("found ya");
         }
         List<ColorWeight> colorsByWeight = parseImage(file);
         
-        graphColour(colorsByWeight, 5);
+        // graphColour(colorsByWeight, 3);
+        findDominantColors(colorsByWeight);
         // graphValuesOfK(colorsByWeight);
 
     }
@@ -200,6 +201,11 @@ public class ColourScanner {
         // System.out.println("GGGGGGGGGGG");
         // centroids.stream().forEach(e-> System.out.println(e.getColorWeight().getHue()));
         List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
+        displayColors(means);
+
+    }
+
+    private static void displayColors(List<ColorWeight> means) {
         DominantRectangle rect = new DominantRectangle(means);
         JFrame window = new JFrame();
         window.setSize(840, 560);
@@ -209,9 +215,30 @@ public class ColourScanner {
         window.setVisible(true);
     }
 
+    private static void findDominantColors(List<ColorWeight> colorsByWeight) {
+        
+        List<Centroid> centroids = kMeansCluster(colorsByWeight, 2);
+
+        List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
+        List<ColorWeight> lastMeans = means;
+        double dist = centroids.stream().mapToDouble(Centroid::sumDistanceFromMean).sum(); 
+        double lastDistance = 2*dist;
+        // for (int k=2; k<12; k++) {
+        int k = 3;
+        while(lastDistance/dist >= 1.15) {
+            lastDistance = dist;
+            centroids = kMeansCluster(colorsByWeight, k);
+            lastMeans = means;
+            means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
+            dist = centroids.stream().mapToDouble(Centroid::sumDistanceFromMean).sum();
+            k++;
+        }
+        displayColors(lastMeans);
+    }
+
     private static void graphValuesOfK(List<ColorWeight> colorsByWeight) {
         List<List<Centroid>> centroidsToDistance = new ArrayList<>();
-        for (int k=1; k<25; k++) {
+        for (int k=1; k<12; k++) {
             List<Centroid> centroids = kMeansCluster(colorsByWeight, k);
             centroidsToDistance.add(centroids);
         }

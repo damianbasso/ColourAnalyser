@@ -21,7 +21,9 @@ public class Centroid {
      * @return - the sum distance between all the nodes and the mean
      */
     public double sumDistanceFromMean() {
-        return cluster.stream().mapToDouble(c -> Math.abs(hue - c.getHue())).sum();
+        // return cluster.stream().mapToDouble(c -> Math.abs(hue - c.getHue())).sum();
+        return cluster.stream().mapToDouble(c -> (hue - c.getHue()) * (hue - c.getHue())).sum();
+    
     }
 
     /**
