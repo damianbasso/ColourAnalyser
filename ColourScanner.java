@@ -32,68 +32,21 @@ import org.jfree.data.category.DefaultCategoryDataset;
 
 public class ColourScanner {
 
-    // the number of dominant colours we're looking for
-    static final private int numOfDom = 30;
+    private List<ColorWeight> colorsByWeight;
+    private ColorWeight averageColour;
 
-    // public static BufferedImage getScaledImage(BufferedImage image, int width, int height) throws IOException {
-    //     Image scaledImage = img.getScaledInstance( width, height, Image.SCALE_SMOOTH);
-    //     BufferedImage imageBuff = new BufferedImage(width, scaledImage.getHeight(null), BufferedImage.TYPE_INT_RGB);
-    //     Graphics g = imageBuff.createGraphics();
-    //     g.drawImage(scaledImage, 0, 0, new Color(0, 0, 0), null);
-    //     g.dispose();
-    //     ImageIO.write(imageBuff, "jpg", newFile);
-    // }
-
-    // Currently only considers hue
-    public static float distBetweenColors(Color c1, Color c2) {
-        float i = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[0];
-        float j = Color.RGBtoHSB(c2.getRed(), c2.getGreen(), c2.getBlue(), null)[0];
-        return Math.abs(i-j);
+    public ColourScanner(File file) throws IOException{
+        colorsByWeight = parseImage(file);
+        averageColour = ColorWeight.averageWeights(colorsByWeight);
     }
 
-    // sort and partition
-    private static HashMap<Centroid, List<ColorWeight>> setMeansToClusters(List<ColorWeight> colorsByWeight, int k) {
-        System.out.println("sorting");
-        colorsByWeight.sort(new ByHSB());
-        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
-        System.out.println("Initialising");
-        // for (i = 0; i<colorsByWeight.size(); i += (colorsByWeight.size()/numOfDom)) {
-        for (int i = 0; i<k; i += 1) {
-            // System.out.println(i * colorsByWeight.size()/ numOfDom);
-            meansToClusters.put(new Centroid( Arrays.asList(colorsByWeight.get(i * colorsByWeight.size()/ k))), new ArrayList<>());
-            // System.out.println("Color is:" + colorsByWeight.get(i));
-        }
-
-        return meansToClusters;
-    }
-
-    private static HashMap<Centroid, List<ColorWeight>> randMeansToClusters(List<ColorWeight> colorsByWeight, int k) {
-        
-        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
-        for (int i =0; i<k; i++) {
-            
-            meansToClusters.put(new Centroid(colorsByWeight.subList(i * colorsByWeight.size()/k, (i + 1) * colorsByWeight.size()/k)), colorsByWeight.subList(i * colorsByWeight.size()/k, (i + 1) * colorsByWeight.size()/k));
-
-        }
-        return meansToClusters;
-    }
-
-    private static HashMap<ColorWeight, List<ColorWeight>> forgyMeansToClusters(List<ColorWeight> colorsByWeight, int k) {
-        
-        HashMap<ColorWeight, List<ColorWeight>> meansToClusters = new HashMap<>();
-        Random rand = new Random();
-        for (int i =0; i<k; i++) {
-            meansToClusters.put(colorsByWeight.get(rand.nextInt(colorsByWeight.size())), new ArrayList<>());
-        }
-        return meansToClusters;
-    }
-
-    // private static HashMap<ColorWeight, List<ColorWeight>> forgyMeansToClusters(List<ColorWeight> colorsByWeight, int k) {
-
-    private static List<ColorWeight> parseImage(File file) throws IOException {
+    /**
+     * parses the given image, loading in the colour objects as a list as well as calculating
+     * the overall average colour of the image
+     */
+    private List<ColorWeight> parseImage(File file) throws IOException {
         BufferedImage image = ImageIO.read(file);
 
-        
         // Image scaled = image.getScaledInstance(image.getWidth()/8, image.getHeight()/8, Image.SCALE_SMOOTH);
         // // ImageIO.write(scaled, "JPG", new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\yoooo.jpg"));
 
@@ -104,39 +57,89 @@ public class ColourScanner {
         // AffineTransformOp ato = new AffineTransformOp(at, AffineTransformOp.TYPE_BICUBIC);
         // scaledImage = ato.filter(image, scaledImage);
 
-
-        HashMap<Color,Integer> colors = new HashMap<>();
+        List<ColorWeight> colorsByWeight = new ArrayList<>();
         for (int x = 0; x <image.getWidth(); x++) {
             for (int y = 0; y< image.getHeight(); y++) {
-                int clr = image.getRGB(x, y);
-                // int red =   (clr & 0x00ff0000) >> 16;
-                // int green = (clr & 0x0000ff00) >> 8;
-                // int blue =   clr & 0x000000ff;
-                // Color color = new Color(red,green,blue);
-                Color color = new Color(clr);
-                if (colors.containsKey(color)) {
-                    colors.put(color, colors.get(color) + 1);
+                // int clr = image.getRGB(x, y);
+                Color colour = new Color(image.getRGB(x, y));
+                // colorsByWeight.add(new ColorWeight(colour));
+                int index = colorsByWeight.indexOf(colour);
+                if (index == -1) {
+                    // adds a new colour with weight 1
+                    colorsByWeight.add(new ColorWeight(colour));
                 }
                 else {
-                    colors.put(color, 1);    
+                    // if the colour has already been recorded, its weight is adjusted
+                    colorsByWeight.get(index).increaseWeight(1);
                 }
             }
-        }
-        List<ColorWeight> colorsByWeight = new ArrayList<>();
-        for (Map.Entry<Color, Integer> entry : colors.entrySet()) {
-            colorsByWeight.add(new ColorWeight(entry.getKey(), entry.getValue()));
         }
         return colorsByWeight;
     }
         
-    private static List<Centroid> kMeansCluster(List<ColorWeight> colorsByWeight, int k) {
-        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
-        HashMap<Centroid, List<ColorWeight>> rearrangedClusters = new HashMap<>();
-        meansToClusters = setMeansToClusters(colorsByWeight, k);
-        // System.out.println("SSSSSSSSSSS");
-        // meansToClusters.keySet().stream().forEach(e-> System.out.println(e.getColorWeight()));
-        // meansToClusters = randMeansToClusters(colorsByWeight, k);
 
+
+    /**
+     * Initialises the means and clusters to be used in the kMeansCluster algorithm.
+     * Delegates by sorting the colours by hue, and then evenly partitioning it in blocks into clusters.
+     * @param colorsByWeight - A list of all the colours in the image to be parsed
+     * @param k - the number of clusters to be formed
+     * @return - The initialised centroids (means) and their associated clusters
+     */
+    private HashMap<Centroid, List<ColorWeight>> sortAndDelegateMeans(int k) {
+        System.out.println("sorting");
+        colorsByWeight.sort(new ByHSB());
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        System.out.println("Initialising");
+        // for (i = 0; i<colorsByWeight.size(); i += (colorsByWeight.size()/numOfDom)) {
+        for (int i = 0; i<k; i += 1) {
+            meansToClusters.put(new Centroid( Arrays.asList(colorsByWeight.get(i * colorsByWeight.size()/ k))), new ArrayList<>());
+        }
+        return meansToClusters;
+    }
+
+    /**
+     * Initialises the means and clusters to be used in the kMeansCluster algorithm.
+     * Delegates by sorting the colours by hue, and then evenly partitioning it in blocks into clusters.
+     * @param colorsByWeight - A list of all the colours in the image to be parsed
+     * @param k - the number of clusters to be formed
+     * @return - The initialised centroids (means) and their associated clusters
+     */
+    private HashMap<Centroid, List<ColorWeight>> randAverageMeans(int k) {
+        
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        HashMap<Integer, List<ColorWeight>> clusters = new HashMap<>();
+        for (int a = 0; a<k; k++) {
+            clusters.put(a, new ArrayList<>());
+        }
+        for (ColorWeight cw : colorsByWeight) {
+            Random rand = new Random();
+            
+            clusters.get(rand.nextInt(k)).add(cw);
+
+        }
+        for (List<ColorWeight> colors : clusters.values()) {
+            meansToClusters.put(new Centroid(colors), colors);
+        }
+        return meansToClusters;
+    }
+
+    private HashMap<Centroid, List<ColorWeight>> forgySelectMeans(int k) {
+        
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        Random rand = new Random();
+        for (int i =0; i<k; i++) {
+            meansToClusters.put(new Centroid(Arrays.asList(colorsByWeight.get(rand.nextInt(colorsByWeight.size())))), new ArrayList<>());
+        }
+        return meansToClusters;
+    }
+
+    // private static HashMap<ColorWeight, List<ColorWeight>> forgyMeansToClusters(List<ColorWeight> colorsByWeight, int k) {
+
+    private List<Centroid> kMeansCluster(int k) {
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        // HashMap<Centroid, List<ColorWeight>> rearrangedClusters = new HashMap<>();
+        meansToClusters = this.sortAndDelegateMeans(k);
         // meansToClusters = randMeansToClusters(colorsByWeight, k);
         // meansToClusters = forgyMeansToClusters(colorsByWeight, k);
         
@@ -145,11 +148,11 @@ public class ColourScanner {
         {
             // Assign clusters
             // System.out.println("Assigning");
-            
             for (ColorWeight curr: colorsByWeight) {
-                Centroid closest = null;
                 float dist = 0;
                 // System.out.println("c");
+                Centroid closest = null;
+                // Centroid closest = meansToClusters.keySet().stream().min((f1,f2) -> Math.round(f1.distFromColor(curr)) - Math.round(f2.distFromColor(curr))).get();
                 for(Centroid key : meansToClusters.keySet()) {
                     // System.out.println("d");
                     if(closest == null || key.distFromColor(curr) < dist) {
@@ -162,7 +165,6 @@ public class ColourScanner {
                 meansToClusters.get(closest).add(curr);
             }
             // System.out.println("LEGO " + meansToClusters);
-            rearrangedClusters = new HashMap<>();
             System.out.println("newMeans");
             // if (meansToClusters.keySet().stream().allMatch(c -> c.recalculateCentroid(meansToClusters.get(c)) == false)) {
             //     System.out.println("BREAK");
@@ -181,23 +183,10 @@ public class ColourScanner {
         return new ArrayList<>(meansToClusters.keySet());
     }
 
-    public static void main(String args[]) throws IOException {
 
-        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\lego.png");
-        if (file.exists()) {
-            System.out.println("found ya");
-        }
-        List<ColorWeight> colorsByWeight = parseImage(file);
+    private void graphColour(int k) {
         
-        // graphColour(colorsByWeight, 3);
-        findDominantColors(colorsByWeight);
-        // graphValuesOfK(colorsByWeight);
-
-    }
-
-    private static void graphColour(List<ColorWeight> colorsByWeight, int k) {
-        
-        List<Centroid> centroids = kMeansCluster(colorsByWeight, k);
+        List<Centroid> centroids = this.kMeansCluster(k);
         // System.out.println("GGGGGGGGGGG");
         // centroids.stream().forEach(e-> System.out.println(e.getColorWeight().getHue()));
         List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
@@ -215,9 +204,9 @@ public class ColourScanner {
         window.setVisible(true);
     }
 
-    private static void findDominantColors(List<ColorWeight> colorsByWeight) {
+    private void findDominantColors() {
         
-        List<Centroid> centroids = kMeansCluster(colorsByWeight, 2);
+        List<Centroid> centroids = kMeansCluster(2);
 
         List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
         List<ColorWeight> lastMeans = means;
@@ -225,9 +214,10 @@ public class ColourScanner {
         double lastDistance = 2*dist;
         // for (int k=2; k<12; k++) {
         int k = 3;
-        while(lastDistance/dist >= 1.15) {
+        while(lastDistance * 0.85 > dist) {
+        // while(lastDistance/ dist > 1.15) {
             lastDistance = dist;
-            centroids = kMeansCluster(colorsByWeight, k);
+            centroids = kMeansCluster(k);
             lastMeans = means;
             means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
             dist = centroids.stream().mapToDouble(Centroid::sumDistanceFromMean).sum();
@@ -236,10 +226,10 @@ public class ColourScanner {
         displayColors(lastMeans);
     }
 
-    private static void graphValuesOfK(List<ColorWeight> colorsByWeight) {
+    private void graphValuesOfK() {
         List<List<Centroid>> centroidsToDistance = new ArrayList<>();
         for (int k=1; k<12; k++) {
-            List<Centroid> centroids = kMeansCluster(colorsByWeight, k);
+            List<Centroid> centroids = kMeansCluster(k);
             centroidsToDistance.add(centroids);
         }
         List<Double> vals = new ArrayList<>();
@@ -251,5 +241,20 @@ public class ColourScanner {
         chart.pack();
         RefineryUtilities.centerFrameOnScreen( chart );
         chart.setVisible( true );
+    }
+
+    
+    public static void main(String args[]) throws IOException {
+        System.out.println("BRUH");
+        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\lego.png");
+        if (file.exists()) {
+            System.out.println("found ya");
+        }
+        ColourScanner cs = new ColourScanner(file);
+        
+        // graphColour(colorsByWeight, 5);
+        cs.findDominantColors();
+        // graphValuesOfK(colorsByWeight);
+
     }
 }

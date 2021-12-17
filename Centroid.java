@@ -6,6 +6,7 @@ import java.awt.Color;
 public class Centroid {
     
     private float hue;
+    private float brightness;
     private Color color;
     private List<ColorWeight> cluster;
     private int weight = 1;
@@ -14,6 +15,7 @@ public class Centroid {
         this.cluster = cluster;
         color = ColorWeight.averageWeights(cluster);
         hue = Color.RGBtoHSB(color.getRed(), color.getGreen(),color.getBlue(), null)[0];
+        brightness = Color.RGBtoHSB(color.getRed(), color.getGreen(),color.getBlue(), null)[1];
     }
     
     /**
@@ -37,13 +39,21 @@ public class Centroid {
         }
         cluster = newCluster;
         hue = Color.RGBtoHSB(newColor.getRed(), newColor.getGreen(), newColor.getBlue(), null)[0];
+        brightness = Color.RGBtoHSB(color.getRed(), color.getGreen(),color.getBlue(), null)[1];
+
         color = newColor;
         weight = newCluster.stream().mapToInt(c -> c.getWeight()).sum();
         return true;
     }
+
+    private float squared(float val) {
+        return val*val;
+    }
     
     public float distFromColor(Color c1) {
+        // return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
         float i = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[0];
+        float j = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[1];
         return Math.abs(i-hue);
     }
 

@@ -46,9 +46,13 @@ public class ColorWeight extends Color implements Comparable<Color> {
         return weight;
     }
 
+    public void increaseWeight(int amnt) {
+        weight += amnt;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ColorWeight)) {
+        if (!(obj instanceof Color)) {
             return false;
         }
         Color other = (Color)obj;
