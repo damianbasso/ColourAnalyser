@@ -204,14 +204,43 @@ public class ColourScanner {
      * @param k - the number of clusters to be formed
      * @return - The initialised centroids (means) and their associated clusters
      */
-    private HashMap<Centroid, List<ColorWeight>> sortAndDelegateMeans(int k) {
+    private HashMap<Centroid, List<ColorWeight>> delegateMeans(int k) {
         // System.out.println("sorting");
         // colorsByWeight.sort(new ByHSB());
         HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
         System.out.println("Initialising");
         // for (i = 0; i<colorsByWeight.size(); i += (colorsByWeight.size()/numOfDom)) {
+        // for (int i = 0; i<k; i += 1) {
+        //     meansToClusters.put(new Centroid( Arrays.asList(colorsByWeight.get(i * colorsByWeight.size()/ k))), new ArrayList<>());
+        // }
         for (int i = 0; i<k; i += 1) {
-            meansToClusters.put(new Centroid( Arrays.asList(colorsByWeight.get(i * colorsByWeight.size()/ k))), new ArrayList<>());
+            List<ColorWeight> currCol = new ArrayList<>();
+            for (int p = i*colorsByWeight.size()/k; p<(i+1)*colorsByWeight.size()/k; p += 1) {
+                currCol.add(colorsByWeight.get(p));
+            }
+            meansToClusters.put(new Centroid(currCol), currCol);
+        }
+        return meansToClusters;
+    }
+
+    /**
+     * Initialises the means and clusters to be used in the kMeansCluster algorithm.
+     * Delegates by sorting the colours by hue, and then evenly partitioning it in blocks into clusters.
+     * @param colorsByWeight - A list of all the colours in the image to be parsed
+     * @param k - the number of clusters to be formed
+     * @return - The initialised centroids (means) and their associated clusters
+     */
+    private HashMap<Centroid, List<ColorWeight>> partitionAveMeans(int k) {
+        // System.out.println("sorting");
+        // colorsByWeight.sort(new ByHSB());
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        System.out.println("Initialising");
+        for (int i = 0; i<k; i += 1) {
+            List<ColorWeight> currCol = new ArrayList<>();
+            for (int p = i*colorsByWeight.size()/k; p<(i+1)*colorsByWeight.size()/k; p += 1) {
+                currCol.add(colorsByWeight.get(p));
+            }
+            meansToClusters.put(new Centroid(currCol), currCol);
         }
         return meansToClusters;
     }
@@ -257,7 +286,43 @@ public class ColourScanner {
     private List<Centroid> kMeansCluster(int k) {
         HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
         // HashMap<Centroid, List<ColorWeight>> rearrangedClusters = new HashMap<>();
-        meansToClusters = this.sortAndDelegateMeans(k);
+        meansToClusters = this.delegateMeans(k);
+        // meansToClusters = randMeansToClusters(colorsByWeight, k);
+        // meansToClusters = forgyMeansToClusters(colorsByWeight, k);
+        
+        // Here, we need initial means to be set
+        while (true)
+        {
+            // Assign clusters
+            for (ColorWeight curr: colorsByWeight) {
+                float dist = 0;
+                Centroid closest = null;
+                for(Centroid key : meansToClusters.keySet()) {
+                    if(closest == null || key.distFromColor(curr) < dist) {
+                        dist = key.distFromColor(curr);
+                        closest = key;
+                    }
+                }
+                meansToClusters.get(closest).add(curr);
+            }
+ 
+            boolean noChange = true;
+            for (Centroid c : meansToClusters.keySet()) {
+                if (c.recalculateCentroid(meansToClusters.get(c))) {
+                    noChange = false;
+                }
+            }
+            if (noChange) {
+                break;
+            }
+        }
+        return new ArrayList<>(meansToClusters.keySet());
+    }
+
+    private List<Centroid> kMeansCluster2(int k) {
+        HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
+        // HashMap<Centroid, List<ColorWeight>> rearrangedClusters = new HashMap<>();
+        meansToClusters = this.partitionAveMeans(k);
         // meansToClusters = randMeansToClusters(colorsByWeight, k);
         // meansToClusters = forgyMeansToClusters(colorsByWeight, k);
         
@@ -298,6 +363,13 @@ public class ColourScanner {
         displayColors(means,image);
 
     }
+    private void graphColour2(int k) {
+        
+        List<Centroid> centroids = this.kMeansCluster2(k);
+        List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
+        displayColors(means,image);
+
+    }
 
     private static void displayColors(List<ColorWeight> means, BufferedImage image) {
         DominantRectangle rect = DominantRectangle.getDominantRectangle(means, image);
@@ -311,14 +383,14 @@ public class ColourScanner {
 
     private void findDominantColors() {
         
-        List<Centroid> centroids = kMeansCluster(2);
+        List<Centroid> centroids = kMeansCluster(5);
 
         List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
         List<ColorWeight> lastMeans = means;
         double dist = centroids.stream().mapToDouble(Centroid::sumDistanceFromMean).sum(); 
         double lastDistance = 2*dist;
         // for (int k=2; k<12; k++) {
-        int k = 3;
+        int k = 6;
         while(lastDistance * 0.85 > dist) {
         // while(lastDistance/ dist > 1.15) {
             lastDistance = dist;
@@ -351,7 +423,7 @@ public class ColourScanner {
     
     public static void main(String args[]) throws IOException {
         System.out.println("Starting");
-        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\images\\spider.jpg");
+        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\images\\Spider.jpg");
         if (file.exists()) {
             System.out.println("found ya");
         }
@@ -366,7 +438,17 @@ public class ColourScanner {
         // endTime = System.nanoTime();
         // System.out.println("Function 2 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
 
-        cs.graphColour(7);
+        // cs.graphColour(4);
+        long startTime = System.nanoTime();
+        cs.graphColour(8);
+        long endTime = System.nanoTime();
+        System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
+
+        startTime = System.nanoTime();
+        cs.graphColour2(8);
+        endTime = System.nanoTime();
+        System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
+
         // cs.findDominantColors();
         // cs.graphValuesOfK();
 

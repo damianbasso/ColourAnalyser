@@ -81,8 +81,6 @@ public class ColorWeight extends Color implements Comparable<Color> {
             blue += curr.getBlue() * curr.getWeight();
             weight += curr.getWeight();
         }
-
-        
         Color balancedColor = new Color(Math.round(red/weight), Math.round(green/weight), Math.round(blue/weight));
 
         return new ColorWeight(balancedColor, weight);
