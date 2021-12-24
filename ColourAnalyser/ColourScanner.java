@@ -323,7 +323,7 @@ public class ColourScanner {
         HashMap<Centroid, List<ColorWeight>> meansToClusters = new HashMap<>();
         // HashMap<Centroid, List<ColorWeight>> rearrangedClusters = new HashMap<>();
         meansToClusters = this.partitionAveMeans(k);
-        // meansToClusters = randMeansToClusters(colorsByWeight, k);
+        // meansToClusters = randMeansToClusters(k);
         // meansToClusters = forgyMeansToClusters(colorsByWeight, k);
         
         // Here, we need initial means to be set
@@ -391,7 +391,7 @@ public class ColourScanner {
         double lastDistance = 2*dist;
         // for (int k=2; k<12; k++) {
         int k = 6;
-        while(lastDistance * 0.85 > dist) {
+        while(lastDistance * 0.875 > dist) {
         // while(lastDistance/ dist > 1.15) {
             lastDistance = dist;
             centroids = kMeansCluster(k);
@@ -405,7 +405,7 @@ public class ColourScanner {
 
     private void graphValuesOfK() {
         List<List<Centroid>> centroidsToDistance = new ArrayList<>();
-        for (int k=1; k<12; k++) {
+        for (int k=1; k<30; k++) {
             List<Centroid> centroids = kMeansCluster(k);
             centroidsToDistance.add(centroids);
         }
@@ -420,14 +420,15 @@ public class ColourScanner {
         chart.setVisible( true );
     }
 
-    
+        
     public static void main(String args[]) throws IOException {
         System.out.println("Starting");
-        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\images\\Spider.jpg");
+        File file = new File("C:\\Users\\damia\\OneDrive\\Documents\\Code\\images\\lionbw.jpg");
         if (file.exists()) {
             System.out.println("found ya");
         }
         ColourScanner cs = new ColourScanner(file);
+        cs.graphValuesOfK();
         // long startTime = System.nanoTime();
         // List<ColorWeight> col1 = ColourScanner.parseImage1(file);
         // long endTime = System.nanoTime();
@@ -439,14 +440,15 @@ public class ColourScanner {
         // System.out.println("Function 2 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
 
         // cs.graphColour(4);
-        long startTime = System.nanoTime();
-        cs.graphColour(8);
-        long endTime = System.nanoTime();
-        System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
+        // long startTime = System.nanoTime();
+        // cs.graphColour(12));
+        // long endTime = System.nanoTime();
+        // System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
 
-        startTime = System.nanoTime();
+        long startTime = System.nanoTime();
         cs.graphColour2(8);
-        endTime = System.nanoTime();
+        cs.findDominantColors();
+        long endTime = System.nanoTime();
         System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
 
         // cs.findDominantColors();

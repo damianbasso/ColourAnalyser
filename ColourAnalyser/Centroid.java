@@ -19,15 +19,7 @@ public class Centroid {
         brightness = Color.RGBtoHSB(color.getRed(), color.getGreen(),color.getBlue(), null)[1];
     }
     
-    /**
-     * Calculates the total distance between every colour in the data set and the mean.
-     * @return - the sum distance between all the nodes and the mean
-     */
-    public double sumDistanceFromMean() {
-        // return cluster.stream().mapToDouble(c -> Math.abs(hue - c.getHue())).sum();
-        return cluster.stream().mapToDouble(c -> (hue - c.getHue()) * (hue - c.getHue())).sum();
     
-    }
 
     /**
      * 
@@ -51,11 +43,23 @@ public class Centroid {
         return val*val;
     }
     
+    /**
+     * Calculates the total distance between every colour in the data set and the mean.
+     * @return - the sum distance between all the nodes and the mean
+     */
+    public double sumDistanceFromMean() {
+        // return cluster.stream().mapToDouble(c -> Math.abs(hue - c.getHue())).sum();
+        return cluster.stream().mapToDouble(c -> distFromColor(c)).sum();
+    
+    }
+
+
     public float distFromColor(Color c1) {
-        // return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
-        float i = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[0];
-        float j = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[1];
-        return Math.abs(i-hue);
+        return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
+        // float[] hsb = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null);
+
+        // float[] myhsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+        // return Math.abs(hsb[0]-myhsb[0]) + Math.abs(hsb[1]-myhsb[1])*15 + Math.abs(hsb[2]-myhsb[2]) *15;
     }
 
     public ColorWeight getColorWeight() {

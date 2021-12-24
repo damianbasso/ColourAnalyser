@@ -2,6 +2,7 @@ package ColourAnalyser;
 import java.awt.Color;
 import java.util.List;
 
+
 public class ColorWeight extends Color implements Comparable<Color> {
     
     private Color colour;
@@ -63,6 +64,14 @@ public class ColorWeight extends Color implements Comparable<Color> {
 
     public float getHue() {
         return Color.RGBtoHSB(this.getRed(), this.getGreen(), this.getBlue(), null)[0];
+    }
+
+    public float getSaturation() {
+        return Color.RGBtoHSB(this.getRed(), this.getGreen(), this.getBlue(), null)[1];
+    }
+
+    public float getBrightness() {
+        return Color.RGBtoHSB(this.getRed(), this.getGreen(), this.getBlue(), null)[2];
     }
 
     public Color inverseColour() {
