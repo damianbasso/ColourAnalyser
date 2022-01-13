@@ -1,0 +1,25 @@
+.container{
+  width: 1000px;
+  height: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid black;
+}
+#display_image{
+  width: 600px;
+  height: 1200px;
+  border: 1px solid black;
+  background-position: left;
+  background-size: cover;
+}
+
+#dom_colours{
+  width: 600px;
+  height: 800px;
+  border: 1px solid black;
+  background-position: right;
+  background-size: cover;
+}
