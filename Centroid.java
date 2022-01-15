@@ -51,10 +51,8 @@ public class Centroid {
     }
     
     public float distFromColor(Color c1) {
-        // return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
-        float i = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[0];
-        float j = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null)[1];
-        return Math.abs(i-hue);
+        return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
+
     }
 
     public ColorWeight getColorWeight() {

@@ -170,25 +170,25 @@ public class ColourScanner {
     public static void main(String args[]) throws IOException {
 
         File file = new File("C:\\Users\\damia\\Documents\\code\\ColourAnalyser\\scar.jpg");
-        if (file.exists()) {
-            System.out.println("found ya bum");
-        }
-        List<ColorWeight> colorsByWeight = parseImage(file);
-        // System.out.println("cheeese");
-        // System.out.println(colorsByWeight.size());
-        // return;
-        // mean :: cluster
-        // ColorWeight :: List<ColorWeight>
-        for(int k = 3; k< 10; k++ ) {        
-            List<Centroid> centroids = kMeansCluster(colorsByWeight, k);
-            List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
-            DominantRectangle rect = new DominantRectangle(means);
-            JFrame window = new JFrame();
-            window.setSize(840, 560);
-            window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            window.add(rect);
+        // if (file.exists()) {
+        //     System.out.println("found ya bum");
+        // }
+        // List<ColorWeight> colorsByWeight = parseImage(file);
+        // // System.out.println("cheeese");
+        // // System.out.println(colorsByWeight.size());
+        // // return;
+        // // mean :: cluster
+        // // ColorWeight :: List<ColorWeight>
+        // for(int k = 3; k< 10; k++ ) {        
+        //     List<Centroid> centroids = kMeansCluster(colorsByWeight, k);
+        //     List<ColorWeight> means = centroids.stream().map(o-> o.getColorWeight()).collect(Collectors.toList());
+        //     DominantRectangle rect = new DominantRectangle(means);
+        //     JFrame window = new JFrame();
+        //     window.setSize(840, 560);
+        //     window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //     window.add(rect);
 
-            window.setVisible(true);
-        }
+        //     window.setVisible(true);
+        // }
     }
 }
