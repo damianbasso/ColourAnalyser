@@ -7,16 +7,13 @@
     <link href="styles/style.css" rel="stylesheet" type="text/css">
   </head>
   <body>
-    <h1>Dominant Colour Analyser</h1>
-    <div class="container">
-      <input type="file" id="image_input" accept="image/png, image/jpg">
-      <div id="display_image"></div>
-      <canvas id="dom_colours" width="500" height="300" style="border:1px solid #d3d3d3;"></canvas>
-   </div>
-    <!-- <div id="target">
+    <h1>Get Dominant Colours of Image</h1>
+    <p>Client-side JavaScript application to get the average color of an image. Drag and drop the files below.
+    <div id="target">
       Drop images here (or click to upload)
-      <input type="file" id="upload" />
-    </div> -->
+      <input type="file" id="upload" multiple />
+    </div>
+    <div id="images"></div>
     <script src="scripts/main.js"></script>
   </body>
 </html>

@@ -23,3 +23,17 @@
   background-position: right;
   background-size: cover;
 }
+
+
+.row {
+  margin: 20px 0;
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+}
+
+.box1 {
+  height: 80px;
+}

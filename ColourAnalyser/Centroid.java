@@ -1,5 +1,6 @@
 package ColourAnalyser;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.awt.Color;
 
@@ -39,7 +40,7 @@ public class Centroid {
         return true;
     }
 
-    private float squared(float val) {
+    private int squared(int val) {
         return val*val;
     }
     
@@ -53,13 +54,25 @@ public class Centroid {
     
     }
 
+    
+    public List<ColorWeight> getCluster() {
+        return cluster;
+    }
 
-    public float distFromColor(Color c1) {
+    
+    public static List<Centroid> splitCentroid(List<Centroid> centroids) {
+        Centroid target = centroids.stream().max(Comparator.comparingDouble(c -> c.sumDistanceFromMean()/ c.getColorWeight().getWeight())).get();
+        centroids.remove(target);
+        List<ColorWeight> cluster = target.getCluster();
+        cluster.sort(new ByHSB());
+        centroids.add(new Centroid(cluster.subList(0, cluster.size()/2)));
+        centroids.add(new Centroid(cluster.subList(cluster.size()/2, cluster.size())));
+        return centroids;
+    }
+
+
+    public int distFromColor(Color c1) {
         return squared(c1.getRed()-color.getRed()) + squared(c1.getGreen()-color.getGreen()) + squared(c1.getBlue()-color.getBlue());
-        // float[] hsb = Color.RGBtoHSB(c1.getRed(), c1.getGreen(), c1.getBlue(), null);
-
-        // float[] myhsb = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-        // return Math.abs(hsb[0]-myhsb[0]) + Math.abs(hsb[1]-myhsb[1])*15 + Math.abs(hsb[2]-myhsb[2]) *15;
     }
 
     public ColorWeight getColorWeight() {

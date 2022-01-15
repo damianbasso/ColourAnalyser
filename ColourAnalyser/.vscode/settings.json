@@ -1,7 +1,6 @@
 {
     "java.project.referencedLibraries": [
-        "E:\\jfreechart-1.0.19\\jfreechart-1.0.19\\lib\\jfreechart-1.0.19.jar",
-        "E:\\jfreechart-1.0.19\\jfreechart-1.0.19\\lib\\jcommon-1.0.23.jar",
-        "C:\\Users\\damia\\OneDrive\\Documents\\Code\\spark-core-2.9.3"
+        "C:\\jfreechart-1.0.19\\jfreechart-1.0.19\\lib\\jfreechart-1.0.19.jar",
+        "C:\\jfreechart-1.0.19\\jfreechart-1.0.19\\lib\\jcommon-1.0.23.jar"
     ]
 }
