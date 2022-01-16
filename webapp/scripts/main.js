@@ -17,7 +17,7 @@ function addImage(file) {
             colors.push({r: data[i], g: data[i+1], b: data[i+2]});
         }
 
-        var rgbs = kMeansCluster(initialiseClusters(colors), colors);
+        var rgbs = kMeansCluster(kMeansCluster(initialiseClusters(colors), colors),colors);
         var weight = 0;
         for(var i in rgbs) {
             orec = rgbs[i];
@@ -83,10 +83,11 @@ class Centroid {
         return this.oldColours.length; 
     }
     split() {
-        var centroids = [];
-        centroids.push(new Centroid(this.oldColours.slice(0,this.oldColours.length/2)));
-        centroids.push(new Centroid(this.oldColours.slice(this.oldColours.length/2, this.oldColours.length)));
-        return centroids;
+        console.log("doggy " +  this.oldColours.length/2);
+        var newCent = new Centroid(this.oldColours.splice(0, this.oldColours.length/2));
+        // refresh colour
+        this.rgb = averageColour(this.oldColours);
+        return newCent;
     }
     dist(colour) {
         return Math.pow(this.rgb.r - colour.r,2) +Math.pow(this.rgb.g - colour.g,2)+Math.pow(this.rgb.b - colour.b,2);
@@ -265,7 +266,6 @@ function kMeansCluster(centroids, colors) {
     var dist = centroids[0].sumDist;
     console.log("oooo");
     console.log(centroids);
-    console.log(centroids.length);
     
     for (c in centroids) {
         if (centroids[c].sumDist() > dist) {
@@ -274,31 +274,9 @@ function kMeansCluster(centroids, colors) {
         }
         
     }
-    var newCentroids = centroids[widestCentroid].split();
-
+    centroids.push(centroids[widestCentroid].split());
+    console.log(centroids);
     console.log("SNAKE");
-    console.log(centroids);
-    console.log(centroids.length);
-
-    centroids.splice(widestCentroid, 1);
-    console.log(centroids);
-    console.log(centroids.length);
-
-    centroids = centroids.concat(newCentroids);
-    // console.log(centroids.length);
-    // console.log("goose");
-    // console.log(centroids[widestCentroid].rgb);
-    // console.log(newCentroids[0].rgb);
-    // console.log(newCentroids[1].rgb);
-    // console.log(centroids.length);
-    // console.log("uhoh not ogod");
-    // console.log(centroids);
-    // centroids[widestCentroid] = newCentroids[0];
-    // console.log(centroids);
-    // centroids.push(newCentroids[1]);
-    // console.log("dddddoooo");
-    console.log(centroids);
-    console.log(centroids.length);
 
     var noChange = false;
     while(noChange == false) {
