@@ -17,10 +17,12 @@ function addImage(file) {
             colors.push({r: data[i], g: data[i+1], b: data[i+2]});
         }
 
-        var rgbs = kMeansCluster(kMeansCluster(initialiseClusters(colors), colors),colors);
+        var rgbs = kMeansCluster(kMeansCluster(kMeansCluster(kMeansCluster(initialiseClusters(colors), colors),colors),colors),colors);
         var weight = 0;
+        console.log("MARK");
         for(var i in rgbs) {
             orec = rgbs[i];
+            console.log(orec.weight);
             weight += orec.weight;
         }
         var y = 0;     
@@ -30,7 +32,7 @@ function addImage(file) {
             console.log("ohooohohoh " + getRGBStr(orec.rgb) + " " + orec.weight);
             ctx.fillStyle = getRGBStr(orec.rgb);
             ctx.fillRect(0,y, 80,40)
-            y += Math.ceil(500 * orec.weight/weight);
+            y += 100;//Math.ceil(500 * orec.weight/weight);
 
         }
         document.getElementById('images').appendChild(canvas);
@@ -87,6 +89,7 @@ class Centroid {
         var newCent = new Centroid(this.oldColours.splice(0, this.oldColours.length/2));
         // refresh colour
         this.rgb = averageColour(this.oldColours);
+        newCent.newColours = newCent.oldColours;
         return newCent;
     }
     dist(colour) {
@@ -260,22 +263,34 @@ function initialiseClusters(colors) {
 }
 
 function kMeansCluster(centroids, colors) {
-    console.log(centroids.length);
+    // console.log(centroids.length);
     console.log("GIRAFFE");
     var widestCentroid = 0;
     var dist = centroids[0].sumDist;
-    console.log("oooo");
-    console.log(centroids);
-    
+    // console.log("oooo");
+    // console.log(centroids);
+    console.log(centroids.length);
+    // for (c in centroids) {
+    //     op = centroids[c];
+    //     console.log(getRGBStr(op.rgb));
+    //     console.log(op.weight);
+    // }
     for (c in centroids) {
         if (centroids[c].sumDist() > dist) {
             dist = centroids[c].sumDist();
             widestCentroid = c;
         }
-        
     }
+    
+    
     centroids.push(centroids[widestCentroid].split());
-    console.log(centroids);
+    // console.log(centroids.length);
+    for (c in centroids) {
+        op = centroids[c];
+        console.log(getRGBStr(op.rgb));
+        console.log(op.weight);
+    }
+    // console.log(centroids);
     console.log("SNAKE");
 
     var noChange = false;
@@ -300,21 +315,14 @@ function kMeansCluster(centroids, colors) {
         noChange = true;
         for (p in centroids) {
             c = centroids[p];
-            // console.log("lop");
-
-            // console.log(c.rgb);
-            // console.log(c.newColours);
-            // console.log(c.oldColours);
 
             if(c.recalculateColour()) {
                 noChange = false;
             }
-            // console.log(c.rgb);
-            // console.log(c.weight);
         }
     }
     console.log("hhheeeellp");
-    console.log(centroids);
+    // console.log(centroids);
     return centroids;
 }
 

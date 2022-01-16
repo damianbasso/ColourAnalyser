@@ -508,7 +508,9 @@ public class ColourScanner {
         // System.out.println(Long.MAX_VALUE);
         // long startTime = System.nanoTime();
         // cs.graphColour2(8);
+        // cs.graphColour2(8);
         cs.findDominantColors2(0.95f);
+        // cs.findDominantColors2(0.95f);
         // long endTime = System.nanoTime();
         // System.out.println("Function 1 done in " +(endTime - startTime)/1000000);  //divide by 1000000 to get milliseconds.
 
