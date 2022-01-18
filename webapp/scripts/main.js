@@ -5,19 +5,19 @@ function addImage(file) {
     img.onload = function() {
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext("2d");
-        var width = canvas.width = img.naturalWidth;
+        var width = canvas.width = img.naturalWidth * 2;
         var height = canvas.height = img.naturalHeight;
         
         ctx.drawImage(img,0,0);
     
-        var imageData = ctx.getImageData(0, 0, width, height);
+        var imageData = ctx.getImageData(0, 0, img.naturalWidth, height);
         var data = imageData.data;
         var colors = [];
-        for (var i = 0, l = data.length; i < l; i+=4) {    
+        for (var i = 0; i < data.length; i+=4) {    
             colors.push({r: data[i], g: data[i+1], b: data[i+2]});
         }
         console.log(colors.length);
-        var rgbs = kMeansCluster(kMeansCluster(kMeansCluster(kMeansCluster(initialiseClusters(colors), colors),colors),colors),colors);
+        var rgbs = initialiseClusters(colors);
         var weight = 0;
         console.log("MARK");
         for(var i in rgbs) {
@@ -26,13 +26,20 @@ function addImage(file) {
             weight += orec.weight;
         }
         var y = 0;     
-        console.log("we got colors");
+        ctx.font = '32px serif';
+
+        rgbs.sort(function(a,b){return b.weight-a.weight})
         for(var i in rgbs) {
-            orec = rgbs[i];
-            console.log("ohooohohoh " + getRGBStr(orec.rgb) + " " + orec.weight);
-            ctx.fillStyle = getRGBStr(orec.rgb);
-            ctx.fillRect(0,y, 80,40)
-            y += 100;//Math.ceil(500 * orec.weight/weight);
+            oref = rgbs[i];
+            console.log("ohooohohoh " + getRGBStr(orec.rgb) + " " + oref.weight);
+            ctx.fillStyle = getRGBStr(oref.rgb);
+            ctx.fillRect(img.naturalWidth,y, img.naturalWidth,img.naturalHeight * oref.weight/weight);
+            ctx.fillStyle = "#000000";
+
+            var textSize = ctx.measureText(getRGBStr(oref.rgb));
+
+            ctx.fillText(getRGBStr(oref.rgb), img.naturalWidth*1.5 - textSize.width/2, y + (img.naturalHeight * orec.weight/weight)/2);
+            y += img.naturalHeight * orec.weight/weight;    
 
         }
         document.getElementById('images').appendChild(canvas);
@@ -262,6 +269,98 @@ function initialiseClusters(colors) {
 }
 
 function kMeansCluster(centroids, colors) {
+    var sum = 0;
+    for (c in centroids) {
+        sum += centroids[c].weight;
+    }
+    console.log("BEGIN = " + sum);
+    // console.log(centroids.length);
+    console.log("GIRAFFE");
+    var widestCentroid = 0;
+    var dist = centroids[0].sumDist;
+    // console.log("oooo");
+    // console.log(centroids);
+    console.log(centroids.length);
+
+    for (c in centroids) {
+        if (centroids[c].sumDist() > dist) {
+            dist = centroids[c].sumDist();
+            widestCentroid = c;
+        }
+    }
+    for (c in centroids) {
+        console.log(centroids[c].newColours.length);
+        console.log(getRGBStr(centroids[c].rgb));
+    }
+
+    console.log("LECTRIC");
+    centroids.push(centroids[widestCentroid].split());
+    // console.log(centroids.length);
+    var sum = 0;
+    for (c in centroids) {
+        sum += centroids[c].weight;
+        centroids[c].newColours = [];
+        console.log(centroids[c].newColours.length);
+        console.log(getRGBStr(centroids[c].rgb));
+    }
+    console.log("MID = " + sum);
+    // console.log(centroids);
+    console.log("SNAKE");
+
+    var noChange = false;
+    while(noChange == false) {
+        // for (p in centroids) {
+        //     c = centroids[p];
+        //     c.colours = [];
+        // }
+        console.log("11111111111");
+        for (p in colors) {
+            colour = colors[p];
+
+            var closest = centroids[0];
+            var dist = centroids[0].dist(colour);
+            for (o in centroids) {
+                centroid = centroids[o];
+                if (centroid.dist(colour) < dist) {
+                    closest = centroid;
+                    dist = centroid.dist(colour);
+                }
+            }
+            closest.newColours.push(colour);
+        }
+        console.log("KEKME");
+            for (c in centroids) {
+                console.log(getRGBStr(centroids[c].rgb));
+                console.log(centroids[c].newColours.length);
+            }
+        noChange = true;
+        console.log("222222222");
+        var sum = 0;
+        for (c in centroids) {
+            sum += centroids[c].weight;
+        }
+        console.log("yoooo = " + sum);
+        for (p in centroids) {
+            c = centroids[p];
+
+            if(c.recalculateColour()) {
+                noChange = false;
+            }
+        }
+    }
+    console.log("hhheeeellp");
+    // console.log(centroids);
+    var sum = 0;
+    for (c in centroids) {
+        sum += centroids[c].weight;
+    }
+    console.log("END = " + sum);
+    return centroids;
+}
+
+function kMeansClusterTEST(colors) {
+    colors.sort(function(a, b){return a-b});
+
     var sum = 0;
     for (c in centroids) {
         sum += centroids[c].weight;
