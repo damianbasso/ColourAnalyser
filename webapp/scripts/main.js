@@ -15,28 +15,38 @@ function addImage(file) {
         var imageData = ctx.getImageData(0, 0, img.naturalWidth, height);
         var data = imageData.data;
         var colors = [];
+        // load colours into an array of rgb object
         for (var i = 0; i < data.length; i+=4) {    
             colors.push({r: data[i], g: data[i+1], b: data[i+2]});
         }
         console.log(colors.length);
-        var startTime = performance.now();
-        var rgbs = kMeansCluster(kMeansCluster(kMeansCluster(kMeansCluster(initialiseClusters(colors),colors),colors),colors),colors);
+        var startTime = performance.now();;
+        var centroids = initialiseClusters(colors)
+        var dist = sumDistOfCentroids(centroids)
+        var lastDistance = dist*2;
+        console.log(dist);
+        while(lastDistance * 0.85 > dist) {
+            console.log("K = " + centroids.length);
+            centroids = kMeansCluster(centroids,colors);
+            lastDistance = dist;
+            dist = sumDistOfCentroids(centroids);
+        }
         console.log(`Call to doSomething took ${performance.now() - startTime} milliseconds`)
 
         var weight = 0;
         console.log("MARK");
-        for(var i in rgbs) {
-            orec = rgbs[i];
+        for(var i in centroids) {
+            orec = centroids[i];
             console.log(orec.weight);
             weight += orec.weight;
         }
         var y = 0;     
-        sumDistOfCentroids(rgbs);
+        sumDistOfCentroids(centroids);
         ctx.font = '32px serif';
 
-        rgbs.sort(function(a,b){return b.weight-a.weight})
-        for(var i in rgbs) {
-            oref = rgbs[i];
+        centroids.sort(function(a,b){return b.weight-a.weight})
+        for(var i in centroids) {
+            oref = centroids[i];
             console.log("ohooohohoh " + getRGBStr(orec.rgb) + " " + oref.weight);
             ctx.fillStyle = getRGBStr(oref.rgb);
             ctx.fillRect(img.naturalWidth,y, img.naturalWidth, Math.round(img.naturalHeight *oref.weight/weight));
@@ -60,6 +70,7 @@ function sumDistOfCentroids(centroids) {
         sum += objc.sumDist();
     }
     console.log("Total sum of mean to cluster distance = " + sum);
+    return sum;
 }
 
 function getRGBStr(rgb) {
@@ -93,7 +104,6 @@ class Centroid {
     }
     recalculateColour() {
         this.rgb = averageColour(this.newColours);
-        console.log(this.rgb);
         if (arraysEqual(this.newColours,this.oldColours)) {
             this.newColours = [];
             return false;
@@ -106,7 +116,6 @@ class Centroid {
         return this.oldColours.length; 
     }
     split() {
-        console.log("doggy " +  this.oldColours.length/2);
         var newCent = new Centroid(this.oldColours.splice(0, this.oldColours.length/2));
         // refresh colour
         this.rgb = averageColour(this.oldColours);
@@ -150,7 +159,6 @@ function arraysEqual(arr1, arr2) {
 function findDoms(img) {
     
     // var c = document.getElementById("dom_colours")
-    console.log("cheeekky");
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext("2d");
     var width = canvas.width = img.naturalWidth;
@@ -285,39 +293,19 @@ function kMeansCluster(centroids, colors) {
     for (c in centroids) {
         sum += centroids[c].weight;
     }
-    console.log("BEGIN = " + sum);
     // console.log(centroids.length);
-    console.log("GIRAFFE");
     var widestCentroid = 0;
     var dist = centroids[0].sumDist;
     // console.log("oooo");
     // console.log(centroids);
-    console.log(centroids.length);
-
     for (c in centroids) {
         if (centroids[c].sumDist() > dist) {
             dist = centroids[c].sumDist();
             widestCentroid = c;
         }
     }
-    for (c in centroids) {
-        console.log(centroids[c].newColours.length);
-        console.log(getRGBStr(centroids[c].rgb));
-    }
-
-    console.log("LECTRIC");
     centroids.push(centroids[widestCentroid].split());
     // console.log(centroids.length);
-    var sum = 0;
-    for (c in centroids) {
-        sum += centroids[c].weight;
-        centroids[c].newColours = [];
-        console.log(centroids[c].newColours.length);
-        console.log(getRGBStr(centroids[c].rgb));
-    }
-    console.log("MID = " + sum);
-    // console.log(centroids);
-    console.log("SNAKE");
 
     var noChange = false;
     while(noChange == false) {
@@ -325,7 +313,6 @@ function kMeansCluster(centroids, colors) {
         //     c = centroids[p];
         //     c.colours = [];
         // }
-        console.log("11111111111");
         for (p in colors) {
             colour = colors[p];
 
@@ -340,18 +327,15 @@ function kMeansCluster(centroids, colors) {
             }
             closest.newColours.push(colour);
         }
-        console.log("KEKME");
             for (c in centroids) {
                 console.log(getRGBStr(centroids[c].rgb));
                 console.log(centroids[c].newColours.length);
             }
         noChange = true;
-        console.log("222222222");
         var sum = 0;
         for (c in centroids) {
             sum += centroids[c].weight;
         }
-        console.log("yoooo = " + sum);
         for (p in centroids) {
             c = centroids[p];
 
@@ -360,13 +344,11 @@ function kMeansCluster(centroids, colors) {
             }
         }
     }
-    console.log("hhheeeellp");
     // console.log(centroids);
     var sum = 0;
     for (c in centroids) {
         sum += centroids[c].weight;
     }
-    console.log("END = " + sum);
     return centroids;
 }
 
@@ -473,15 +455,11 @@ function findDomsFromColor(clusters) {
     var ctx = canvas.getContext("2d");
     var width = canvas.width = img.naturalWidth;
     var height  = canvas.height = img.naturalHeight;
-    
-    console.log("dddd" + img.naturalHeight);
-    console.log(img.naturalWidth);
-    
+     
     ctx.drawImage(img,0,0);
 
     var imageData = ctx.getImageData(0, 0, width, height);
     var data = imageData.data;
-    console.log("cccccc");
     const colors = [];
     const centroid1 = [];
     const centroid2 = [];
