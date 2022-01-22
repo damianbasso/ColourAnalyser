@@ -2,30 +2,56 @@
 function addImage(file) {
     var img = new Image();
     img.src = URL.createObjectURL(file);
+
     // Factor to reduce resolution by
-    
-    var resFactor = 10;
+    var resFactor = 7;
     img.onload = function() {        
-        for(var resFactor = 1; resFactor < 11; resFactor++) {
+        // for(var resFactor = 8; resFactor < 9; resFactor++) {
+            
+            var startTime = performance.now();;
 
-        console.log("YOOOO" + img.naturalWidth + "OOOO" + img.naturalHeight);
-        console.log(getColoursOfImage(img,1).length);
-        var startTime = performance.now();;
+            colors = getColoursOfImage(img, resFactor);
+            var centroids = findCentroids(colors,5);
+            var dist = sumDistOfCentroids(centroids);
+            
+            var newC = findCentroids(colors,3);
+            var lastCentroids = centroids;
+            var dist = sumDistOfCentroids(centroids);
+            var lastDistance = dist * 2;
+            while(lastDistance * 0.85 > dist) {
+                lastDistance = dist;
+                lastCentroids = newC;
+                var newC = findCentroids(colors,centroids.length + 1);
+                var dist = sumDistOfCentroids(newC);
+                for (var i = 0; i<50; i++) {
+                    var currC = findCentroids(colors,centroids.length + 1);
+                    if (sumDistOfCentroids(currC) < dist) {
+                        dist = sumDistOfCentroids(currC);
+                        newC = currC;
+                    }
+                }
 
-        colors = getColoursOfImage(img, resFactor);
-
-        var centroids = initialiseClusters(colors)
-        var dist = sumDistOfCentroids(centroids)
-        var lastDistance = dist*2;
-
-        while(lastDistance * 0.85 > dist) {
-            // console.log("K = " + centroids.length);
-            centroids = kMeansCluster(centroids,colors);
-            lastDistance = dist;
-            dist = sumDistOfCentroids(centroids);
-        }
-        console.log(resFactor + "    " + (performance.now() - startTime) + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
-        }
+            }
+            // var centroids = initialiseClusters(colors)
+            // var dist = sumDistOfCentroids(centroids)
+            // var lastDistance = dist*2;
+            // console.log("MARK");
+            // for(c in centroids) {
+            //     console.log(getRGBStr(centroids[c].rgb) + "w" + centroids[c].weight);
+            // }
+            // while(lastDistance * 0.85 > dist) {
+            //     // console.log("K = " + centroids.length);
+            //     centroids = kMeansCluster(centroids,colors);
+            //     // console.log("MARK");
+            //     // for(c in centroids) {
+            //     //     console.log(getRGBStr(centroids[c].rgb) + "w" + centroids[c].weight);
+            //     // }
+            //     lastDistance = dist;
+            //     dist = sumDistOfCentroids(centroids);
+            // }
+            
+            console.log(resFactor + "    " + (performance.now() - startTime) + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
+        // }
         
         var canvas = document.createElement('canvas');
         canvas.className = 'row';
@@ -42,13 +68,14 @@ function addImage(file) {
         centroids.sort(function(a,b){return b.weight-a.weight})
         for(var i in centroids) {
             oref = centroids[i];
+            console.log(getRGBStr(oref.rgb));
             ctx.fillStyle = getRGBStr(oref.rgb);
             ctx.fillRect(img.naturalWidth,y, canvas.width, Math.round(canvas.height *oref.weight/colors.length));
             
             // Draw text
-            ctx.fillStyle = "#000000";
-            var textSize = ctx.measureText(getRGBStr(oref.rgb));
-            ctx.fillText(getRGBStr(oref.rgb), img.naturalWidth*1.5 - textSize.width/2, y + (img.naturalHeight * oref.weight/colors.length)/2);
+            // ctx.fillStyle = "#000000";
+            // var textSize = ctx.measureText(getRGBStr(oref.rgb));
+            // ctx.fillText(getRGBStr(oref.rgb), img.naturalWidth*1.5 - textSize.width/2, y + (img.naturalHeight * oref.weight/colors.length)/2);
             
             y += Math.round(img.naturalHeight *oref.weight/colors.length);  
         }
@@ -73,10 +100,8 @@ function getColoursOfImage(img, resFactor) {
     var colors = [];
     // load colours into an array of rgb object
     for (var i = 0; i < data.length; i+=4) {  
-        // console.log(i);  
         // bypass fully transparent pixels
         if (data[i+3] > 0) {
-            // console.log("YO");
             colors.push({r: data[i], g: data[i+1], b: data[i+2]});
         }
     }
@@ -100,16 +125,14 @@ function sumDistOfCentroids(centroids) {
 function sumDistanceFromColours(centroids, colours) {
     var sum = 0;
     for (c in colours) {
-        objc = colours[c];
-        var dist = centroids[0].dist(colour);
+        // find the distance to the closest centroid
+        var dist = centroids[0].dist(colours[c]);
         for (o in centroids) {
-            centroid = centroids[o];
-            if (centroid.dist(colour) < dist) {
-                dist = centroid.dist(colour);
+            if (centroids[o].dist(colours[c]) < dist) {
+                dist = centroids[o].dist(colours[c]);
             }
         }
-        sum+= dist;
-        
+        sum+= dist;   
     }
     return sum;
 }
@@ -125,9 +148,7 @@ function handleImages(files) {
     for (var i = 0; i < files.length; i++) {
         addImage(files[i]);
     }
-}
-
-  
+}  
 
 function drawColours() {
     // var c = document.getElementById("dom_colours");
@@ -157,18 +178,16 @@ class Centroid {
         return this.oldColours.length; 
     }
     split() {
-        var newCent = new Centroid(this.oldColours.splice(0, this.oldColours.length/2));
-        // refresh colour
-        this.rgb = averageColour(this.oldColours);
-        newCent.newColours = newCent.oldColours;
-        return newCent;
-        // var centroids = initialiseClusters(this.oldColours);
-        // this.oldColours = centroids[0].oldColours;
+
+        // var newCent = new Centroid(this.oldColours.splice(0, this.oldColours.length/2));
+        // // refresh colour
         // this.rgb = averageColour(this.oldColours);
-
-
-        // return centroids[1];
-
+        // newCent.newColours = newCent.oldColours;
+        // return newCent;
+        var newCentroids = initialiseClusters(this.oldColours);
+        this.oldColours = newCentroids[0].oldColours;
+        this.rgb = newCentroids[0].rgb;
+        return newCentroids[1];
     }
     dist(colour) {
         return Math.pow(this.rgb.r - colour.r,2) +Math.pow(this.rgb.g - colour.g,2)+Math.pow(this.rgb.b - colour.b,2);
@@ -197,42 +216,7 @@ function arraysEqual(arr1, arr2) {
 
 };
 
-function findDoms(img) {
-    
-    // var c = document.getElementById("dom_colours")
-    var canvas = document.createElement('canvas');
-    var ctx = canvas.getContext("2d");
-    var width = canvas.width = img.naturalWidth;
-    var height = canvas.height = img.naturalHeight;
-    
-    ctx.drawImage(img,0,0);
 
-    var imageData = ctx.getImageData(0, 0, width, height);
-    var data = imageData.data;
-    
-    const colors = [];
-    const centroid1 = [];
-    const centroid2 = [];
-
-    var p = 0;
-    for (var i = 0, l = data.length; i < l; i+=4) {
-        
-        colors.push({r: data[i], g: data[i+1], b: data[i+2]});
-        if (i < data.length/2) {
-            centroid1.push({r: data[i], g: data[i+1], b: data[i+2]});
-        }
-        else {
-            centroid2[p].push({r: data[i], g: data[i+1], b: data[i+2]});
-        }
-    }
-
-    const ret = [];
-    var rgb = averageColour(centroid1);
-    ret[0] = {r:rgb.r,g:rgb.g,b:rgb.b,weight:rgb.weight};
-    var rgb = averageColour(centroid1);
-    ret[1] = {r:rgb.r,g:rgb.g,b:rgb.b,weight:rgb.weight};
-    return ret;
-}
 
 // Sums together the r g and b values of the colour
 function sumColour(rgb) {
@@ -248,7 +232,6 @@ function distBetweenColours(rgb1, rgb2) {
 // two points between
 function initialiseClusters(colors) {
     
-    var startTime = performance.now();
     const centroid1 = [];
     const centroid2 = [];
     var min = sumColour(colors[0]);
@@ -269,7 +252,6 @@ function initialiseClusters(colors) {
     }
     minColour = {r:Math.floor((averageColour(colors).r + minColour.r)/2), g:Math.floor((averageColour(colors).g + minColour.g)/2), b:Math.floor((averageColour(colors).b + minColour.b)/2) }
     maxColour = {r:Math.floor((averageColour(colors).r + maxColour.r)/2), g:Math.floor((averageColour(colors).g + maxColour.g)/2), b:Math.floor((averageColour(colors).b + maxColour.b)/2) }
-   
     
     for (var i = 0, l = colors.length; i < l; i++) {
         if (distBetweenColours(minColour, colors[i]) < distBetweenColours(maxColour, colors[i])) {
@@ -322,12 +304,14 @@ function kMeansCluster(centroids, colors) {
     }
     // console.log(centroids.length);
     var widestCentroid = 0;
-    var dist = centroids[0].sumDist;
+    var dist = centroids[0].sumDist()/centroids[0].weight;
     // console.log("oooo");
     // console.log(centroids);
     for (c in centroids) {
-        if (centroids[c].sumDist() > dist) {
-            dist = centroids[c].sumDist();
+        var curr = centroids[c];
+        var dist = curr.sumDist()/curr.weight;
+        if (curr > dist) {
+            dist = curr;
             widestCentroid = c;
         }
     }
@@ -368,6 +352,45 @@ function kMeansCluster(centroids, colors) {
         }
     }
     return centroids;
+}
+
+function findCentroids(colors, n) {
+    var noChange = false;
+    var centroids = [];
+    for (var i = 0; i< n; i++) {
+        centroids.push(new Centroid([colors[Math.floor(Math.random() * colors.length)]]))
+    }
+    
+    while(noChange == false) {
+        for (p in colors) {
+            colour = colors[p];
+
+            var closest = centroids[0];
+            var dist = centroids[0].dist(colour);
+            for (o in centroids) {
+                centroid = centroids[o];
+                if (centroid.dist(colour) < dist) {
+                    closest = centroid;
+                    dist = centroid.dist(colour);
+                }
+            }
+            closest.newColours.push(colour);
+        }
+        noChange = true;
+        var sum = 0;
+        for (c in centroids) {
+            sum += centroids[c].weight;
+        }
+        for (p in centroids) {
+            c = centroids[p];
+
+            if(c.recalculateColour()) {
+                noChange = false;
+            }
+        }
+    }
+    return centroids;
+
 }
 
 function findDomsFromColor(clusters) {
@@ -425,6 +448,16 @@ function averageColour(colours) {
 
     return {r:r, g:g, b:b, weight:colours.length}
 }
+
+document.ondragover = function(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+};
+  
+document.ondrop = function(event) {
+    event.preventDefault();
+    handleImages(event.dataTransfer.files);
+};
 
 (function() {
     var upload = document.getElementById('upload');
