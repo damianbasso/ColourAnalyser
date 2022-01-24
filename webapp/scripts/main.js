@@ -1,58 +1,56 @@
 
 function addImage(file) {
+
     var img = new Image();
     img.src = URL.createObjectURL(file);
 
     // Factor to reduce resolution by
-    var resFactor = 7;
-    img.onload = function() {        
-        // for(var resFactor = 8; resFactor < 9; resFactor++) {
-            
-            var startTime = performance.now();;
-
-            colors = getColoursOfImage(img, resFactor);
-            var centroids = findCentroids(colors,5);
-            var dist = sumDistOfCentroids(centroids);
-            
-            var newC = findCentroids(colors,3);
-            var lastCentroids = centroids;
-            var dist = sumDistOfCentroids(centroids);
-            var lastDistance = dist * 2;
-            while(lastDistance * 0.85 > dist) {
-                lastDistance = dist;
-                lastCentroids = newC;
-                var newC = findCentroids(colors,centroids.length + 1);
-                var dist = sumDistOfCentroids(newC);
-                for (var i = 0; i<50; i++) {
-                    var currC = findCentroids(colors,centroids.length + 1);
-                    if (sumDistOfCentroids(currC) < dist) {
-                        dist = sumDistOfCentroids(currC);
-                        newC = currC;
-                    }
-                }
-
-            }
-            // var centroids = initialiseClusters(colors)
-            // var dist = sumDistOfCentroids(centroids)
-            // var lastDistance = dist*2;
-            // console.log("MARK");
-            // for(c in centroids) {
-            //     console.log(getRGBStr(centroids[c].rgb) + "w" + centroids[c].weight);
-            // }
-            // while(lastDistance * 0.85 > dist) {
-            //     // console.log("K = " + centroids.length);
-            //     centroids = kMeansCluster(centroids,colors);
-            //     // console.log("MARK");
-            //     // for(c in centroids) {
-            //     //     console.log(getRGBStr(centroids[c].rgb) + "w" + centroids[c].weight);
-            //     // }
-            //     lastDistance = dist;
-            //     dist = sumDistOfCentroids(centroids);
-            // }
-            
-            console.log(resFactor + "    " + (performance.now() - startTime) + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
-        // }
+    var resFactor = 13;
+    img.onload = function() { 
         
+        
+        
+        var resFactor = Math.floor(Math.sqrt(img.width*img.height/8000));
+        var startTime = performance.now();;
+
+        colors = getColoursOfImage(img, resFactor);
+        console.log("colors array size = " + colors.length);
+        
+        var centroids = findCentroids(colors,4);
+        var dist = sumDistOfCentroids(centroids);
+
+        for (var i = 0; i<10; i++) {
+            var currC = findCentroids(colors,3);
+            if (sumDistOfCentroids(currC) < dist) {
+                dist = sumDistOfCentroids(currC);
+                centroids = currC;
+            }
+        }
+        
+        var lastCentroids = centroids;
+        
+        var dist = sumDistOfCentroids(centroids);
+        var lastDistance = dist * 2;
+        // Additional colours are added when they shave 15% from the sumDistance
+        while(lastDistance * 0.85 > dist) {
+            lastDistance = dist;
+            lastCentroids = centroids;
+            var centroids = kMeansCluster(centroids, colors);
+            // var centroids = findCentroids(colors,centroids.length);
+
+            var dist = sumDistOfCentroids(centroids);
+            for (var i = 0; i<15; i++) {
+                var currC = findCentroids(colors,centroids.length);
+                if (sumDistOfCentroids(currC) < dist) {
+                    dist = sumDistOfCentroids(currC);
+                    centroids = currC;
+                }
+            }
+
+        }
+        
+        console.log(resFactor + "    " + (performance.now() - startTime) + "    colors = " + colors.length + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
+
         var canvas = document.createElement('canvas');
         canvas.className = 'row';
 
@@ -353,12 +351,25 @@ function kMeansCluster(centroids, colors) {
     }
     return centroids;
 }
+// Seeded RNG function
+// Taken from https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+function mulberry32(a) {
+    return function() {
+      var t = a += 0x6D2B79F5;
+      t = Math.imul(t ^ t >>> 15, t | 1);
+      t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
 
 function findCentroids(colors, n) {
     var noChange = false;
     var centroids = [];
+    // seed is used to maintain integrity in results 
+    var rand = mulberry32(200);
+
     for (var i = 0; i< n; i++) {
-        centroids.push(new Centroid([colors[Math.floor(Math.random() * colors.length)]]))
+        centroids.push(new Centroid([colors[Math.floor(rand() * colors.length)]]));
     }
     
     while(noChange == false) {
