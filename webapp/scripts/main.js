@@ -1,21 +1,22 @@
 
-function addImage(file) {
-
+function loadImage(file) {
+    if (document.getElementById("numColours").value != "" && document.getElementById("numColours").value<=0) {
+        console.log("dddd");
+        document.getElementById("inputError").hidden = false;
+        return;    
+    }
+    document.getElementById("inputError").hidden = true;
+    var gif = new Image();
+    gif.src = "loading.gif";
+    gif.id = "load";
+    document.getElementById('images').appendChild(gif)
+    setTimeout(function(){process(file); },10); 
+}
+function process(file) {
     var img = new Image();
     img.src = URL.createObjectURL(file);
 
     img.onload = function() { 
-        // var resFactor = Math.floor(Math.sqrt(img.width*img.height/8000));
-        // colors = getColoursOfImage(img, resFactor);
-
-        // for (var k = 5; k< 15; k++) {
-        //     startTime = performance.now();
-
-        //     var centroids = findCentroids(colors, k);
-        //     console.log(resFactor + "    " +k + "   " + (performance.now() - startTime) + "    colors = " + colors.length + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
-
-        // }
-         
         // Factor to reduce resolution by
         // resFactor is calculated to aim to reduce colours array length
         // to 8000
@@ -24,48 +25,87 @@ function addImage(file) {
         var startTime = performance.now();;
 
         colors = getColoursOfImage(img, resFactor);
-        // console.log("colors array size = " + colors.length);
-        
-        // initialise 3 centroids as the minimum number of colours
-        var centroids = findCentroids(colors,4);
-        // var dist = sumDistOfCentroids(centroids);
 
-        // // for (var i = 0; i<10; i++) {
-        // //     var currC = findCentroids(colors,3);
-        // //     if (sumDistOfCentroids(currC) < dist) {
-        // //         dist = sumDistOfCentroids(currC);
-        // //         centroids = currC;
-        // //     }
-        // // }
-        
-        var lastCentroids = centroids;
-        var dist = sumDistOfCentroids(centroids);
-
-
-        var lastDistance = dist * 2;
-        // Additional colours are added when they shave 15% from the sumDistance
-        while(lastDistance * 0.85 > dist) {
-            lastDistance = dist;
-            lastCentroids = centroids;
-            // kMeansCluster utilises previous centroids when k = n
-            // to find some when k = n + 1
-            var centroids = kMeansCluster(centroids, colors);
+        // If number of colours is specified, finds centroids by using a forgy
+        // initialisation many times, and finding the most accurate result
+        if (document.getElementById("numColours").value!="") {
+            var k = document.getElementById("numColours").value;
+            
+            var centroids = findCentroids(colors,k);
             var dist = sumDistOfCentroids(centroids);
 
-
-            for (var i = 0; i<10; i++) {
-                var currC = findCentroids(colors,centroids.length);
-                if (sumDistOfCentroids(currC) < dist) {
-                    dist = sumDistOfCentroids(currC);
-                    centroids = currC;
+            // find the iteration with the best result (lowest sum distance from colours)
+            for (var i=0; i< 25; i++) {
+                var newCentroids = findCentroids(colors, k);
+                
+                var newDist = sumDistOfCentroids(newCentroids);
+                if (newDist < dist) {
+                    centroids = sumDistOfCentroids;
+                    dist = newDist;
                 }
             }
-
         }
-        
-        console.log(resFactor + "    " + (performance.now() - startTime) + "    colors = " + colors.length + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
+        // Iteratively find the preffered result of centroids
+        else {
+            // initialise 4 centroids as the minimum number of colours
+            var centroids = findCentroids(colors,4);
+            var lastCentroids = centroids;
+            var dist = sumDistOfCentroids(centroids);
 
-        var canvas = document.createElement('canvas');
+            var lastDistance = dist * 2;
+            // Additional colours are added when they shave 15% from the sumDistance
+            while(lastDistance * 0.85 > dist) {
+                lastDistance = dist;
+                lastCentroids = centroids;
+                // kMeansCluster utilises previous centroids when k = n
+                // to find some when k = n + 1
+                var centroids = kMeansCluster(centroids, colors);
+                var dist = sumDistOfCentroids(centroids);
+
+                for (var i = 0; i<10; i++) {
+                    var currC = findCentroids(colors,centroids.length);
+                    if (sumDistOfCentroids(currC) < dist) {
+                        dist = sumDistOfCentroids(currC);
+                        centroids = currC;
+                    }
+                }
+            }
+        }
+        console.log(resFactor + "    " + (performance.now() - startTime) + "    colors = " + colors.length + "    " + sumDistanceFromColours(centroids, getColoursOfImage(img, 1)));
+        document.getElementById("load").remove();
+        drawResults(centroids,img);
+    };
+
+
+}
+
+// Reads all the colours in the image into an array
+// resFactor is the value by which the image's resolution is divided as
+// to speed up the algorithm by reducing the size of the colours array
+function getColoursOfImage(img, resFactor) {
+    var resizeCanvas = document.createElement('canvas');
+    resizeCanvas.width = img.width/resFactor;
+    resizeCanvas.height = img.height/resFactor;
+
+    ctx = resizeCanvas.getContext('2d');
+    ctx.drawImage(img,0,0,img.width/resFactor,img.height/resFactor);
+
+    var imageData = ctx.getImageData(0, 0, img.width/resFactor,img.height/resFactor );
+    var data = imageData.data;
+    var colors = [];
+    // load colours into an array of rgb object
+    for (var i = 0; i < data.length; i+=4) {  
+        // bypass fully transparent pixels
+        if (data[i+3] > 0) {
+            colors.push({r: data[i], g: data[i+1], b: data[i+2]});
+            // console.log(colors[colors.length-1]);
+        }
+    }
+    return colors;
+}
+
+function drawResults(centroids, img) {
+    var canvas = document.createElement('canvas');
         canvas.className = 'row';
 
         canvas.width = img.naturalWidth * 2;
@@ -92,31 +132,6 @@ function addImage(file) {
             y += Math.round(img.naturalHeight *oref.weight/colors.length);  
         }
         document.getElementById('images').appendChild(canvas);
-    };
-}
-
-// Reads all the colours in the image into an array
-// resFactor is the value by which the image's resolution is divided as
-// to speed up the algorithm by reducing the size of the colours array
-function getColoursOfImage(img, resFactor) {
-    var resizeCanvas = document.createElement('canvas');
-    resizeCanvas.width = img.width/resFactor;
-    resizeCanvas.height = img.height/resFactor;
-
-    ctx = resizeCanvas.getContext('2d');
-    ctx.drawImage(img,0,0,img.width/resFactor,img.height/resFactor);
-
-    var imageData = ctx.getImageData(0, 0, img.width/resFactor,img.height/resFactor );
-    var data = imageData.data;
-    var colors = [];
-    // load colours into an array of rgb object
-    for (var i = 0; i < data.length; i+=4) {  
-        // bypass fully transparent pixels
-        if (data[i+3] > 0) {
-            colors.push({r: data[i], g: data[i+1], b: data[i+2]});
-        }
-    }
-    return colors;
 }
 
 // Sums the distance between centroids and their clusters
@@ -157,7 +172,7 @@ function handleImages(files) {
     document.getElementById('images').innerHTML = '';
 
     for (var i = 0; i < files.length; i++) {
-        addImage(files[i]);
+        loadImage(files[i]);
     }
 }  
 
@@ -237,9 +252,11 @@ function arraysEqual(arr1, arr2) {
 
 	// Otherwise, return true
 	return true;
-
 };
 
+function coloursEqual(col1, col2) {
+    return col1.r == col2.r && col1.g == col2.g && col1.b == col2.b;
+}
 
 
 // Sums together the r g and b values of the colour
@@ -255,6 +272,7 @@ function distBetweenColours(rgb1, rgb2) {
 // If we calc average, max (r + g + b), min (r+b+g), we initialise
 // two points between
 function initialise2Centroids(colors) {
+    startTime = performance.now();
     var min = colors[0];
     var max = colors[0];
     
@@ -270,16 +288,6 @@ function initialise2Centroids(colors) {
     min = {r:Math.floor((averageColour(colors).r + min.r)/2), g:Math.floor((averageColour(colors).g + min.g)/2), b:Math.floor((averageColour(colors).b + min.b)/2) }
     max = {r:Math.floor((averageColour(colors).r + max.r)/2), g:Math.floor((averageColour(colors).g + max.g)/2), b:Math.floor((averageColour(colors).b + max.b)/2) }
 
-    // for (var i = 0, l = colors.length; i < l; i++) {
-    //     if (distBetweenColours(minColour, colors[i]) < distBetweenColours(maxColour, colors[i])) {
-    //         centroid1.push(colors[i]);
-    //     }
-    //     else {
-    //         centroid2.push(colors[i]);
-    //     }
-    // }
-    // const centroids = [new Centroid(centroid1), new Centroid(centroid2)];
-    
     var centroids = [new Centroid([min]), new Centroid([max])];
     
     var noChange = false;
@@ -377,8 +385,20 @@ function findCentroids(colors, k) {
     var rand = mulberry32(200);
 
     // Randomly selects colours to initialise as the means (Forgy initialisation)
-    for (var i = 0; i< k; i++) {
-        centroids.push(new Centroid([colors[Math.floor(rand() * colors.length)]]));
+    while (centroids.length < k) {
+        var newColour = colors[Math.floor(rand() * colors.length)];
+        // console.log("OWOW" + getRGBStr(newColour));
+        // console.log(getRGBStr(newColour));
+        var colourIsUnique = true;
+        for (t in centroids) {
+            if (coloursEqual(centroids[t].rgb, newColour)) {
+                colourIsUnique = false;
+                // break;
+            }
+        }
+        if (colourIsUnique) {
+            centroids.push(new Centroid([newColour]));
+        }
     }
 
     // var initArrays = [];

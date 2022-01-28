@@ -8,12 +8,24 @@
   </head>
   <body>
     <h1>Get Dominant Colours of Image</h1>
-    <p>JavaScript application to group the dominant colours in an image. Drag and drop the files below.
+    <p>JavaScript application to find the dominant colours in an image. Drag and drop the files below.
     <div id="target">
       Drop images here (or click to upload)
       <input type="file" id="upload" multiple />
     </div>
+    <div id="numOfColours">
+      <label for="numColours">How many colours would you like? (optional)</label>
+      <input type="number" id="numColours" name="numColours" min="1">
+    </div>
+    <div id="inputError", hidden = "true">
+      <span style="color:red" role="alert">
+        Number of colours must be a positive number
+      </span>
+    </div>
+    <!-- <img id="load" src="loading.gif" width="250" /> -->
+
     <div id="images"></div>
     <script src="scripts/main.js"></script>
   </body>
+
 </html>
