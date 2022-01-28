@@ -3,7 +3,7 @@ Program that analyses the colours utilised in an image
 
 [Run the webapp here](https://ginga17.github.io/)
 
-#Brief
+# Brief
 
 Algorithm utilises kMeansClustering to delegate colours which serve as means in the RGB colour space
 to attempt to accurately summize the 'palette' of the image. 
@@ -15,7 +15,7 @@ Initialisation within kMeansCluster utilises two methods. The first takes the re
 one of the means, the one which has the highest average distance from it's cluster. 
 The second method is Forgy initialisation which is simply setting the initial means to random values in the image.
 
-#Purpose
+# Purpose
 
 This project I started on as a precursor to a larger project which aims to apply a similar technique, but on video (in particular, 
 movies) rather than static images. Working on this thus has helped prepare the necessary techniques and algorithms for this oncoming 
