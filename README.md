@@ -1,7 +1,7 @@
 # ColourAnalyser
 Program that analyses the colours utilised in an image
 
-[Run the webapp here](https://ginga17.github.io/)
+[Run the webapp here](https://ginga17.github.io/ColourAnalyser/)
 
 # Brief
 
